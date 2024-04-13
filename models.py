@@ -23,9 +23,22 @@ class HourlyPrice(BaseModel):
 class data(BaseModel):
     database: str
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "source": "netto",
+                    "hour": str(
+                        datetime.now()
+                    ),  # .replace(minute=0, second=0, microsecond=0))
+                }
+            ]
+        }
+    }
+
     def get(self, source: DataSource, start: datetime) -> HourlyPrice:
         """Get the data for a range of dates"""
-        return self._get(source, start)
+        return self._get(source, start.replace(minute=0, second=0, microsecond=0))
 
     def _get(self, source: DataSource, date: datetime) -> HourlyPrice:
         fname = self.fname(source, date)

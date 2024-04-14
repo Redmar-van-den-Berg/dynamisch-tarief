@@ -19,7 +19,16 @@ d = data(database="~/Downloads/dynamisch/")
 def draw(data: Dict[str, Any]) -> str:
     df = pd.DataFrame(data)
     print(df)
-    ax = df.plot(kind="line", ylim=(0, df.to_numpy().max()))
+
+    # Min is 90% of min value
+    ymin = df.to_numpy().min()
+    if ymin > 0:
+        ymin *= 0.9
+    else:
+        ymin *= 1.1
+    # Max is 110% of max value
+    ymax = df.to_numpy().max()*1.10
+    ax = df.plot(kind="line", ylim=(ymin, ymax))
 
     ax.xaxis.grid(True, which='both')
     ax.yaxis.grid(True, which='both')
@@ -31,10 +40,9 @@ def draw(data: Dict[str, Any]) -> str:
 
     return fake_file.read()
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
+@app.get("/{source}", response_class=HTMLResponse)
+async def root(source: DataSource):
     today = datetime.now().replace(hour=23)
-    source = DataSource("netto")
     day = await get_day_before(source, today)
     week = await get_week_before(source, today)
     month = await get_month_before(source, today)

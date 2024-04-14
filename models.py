@@ -6,7 +6,7 @@ import functools
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from enum import Enum
-from typing import Iterator
+from typing import Iterator, Optional
 
 
 
@@ -41,12 +41,12 @@ class data(BaseModel):
     def __hash__(self):
         return hash(self.database)
 
-    def get(self, source: DataSource, start: datetime) -> HourlyPrice | None:
+    def get(self, source: DataSource, start: datetime) -> Optional[HourlyPrice]:
         """Get the data for a range of dates"""
         return self._get(source, start.replace(minute=0, second=0, microsecond=0))
 
     @functools.cache
-    def _get(self, source: DataSource, date: datetime) -> HourlyPrice | None:
+    def _get(self, source: DataSource, date: datetime) -> Optional[HourlyPrice]:
         fname = self.fname(source, date)
 
         if not os.path.exists(fname):

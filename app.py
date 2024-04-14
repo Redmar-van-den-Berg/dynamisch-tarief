@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from collections import defaultdict
 from statistics import mean
 from datetime import datetime, timedelta
-import sys
+import argparse
 import uvicorn
 
 import pandas as pd
@@ -126,6 +126,11 @@ async def get_year_before(source: DataSource, date: datetime) -> Dict[str, float
     return year
 
 if __name__ == "__main__":
-    database = sys.argv[1]
-    d = data(database=database)
-    uvicorn.run(app)
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--database", required=True, help="Folder that contains the dynamic prices")
+    parser.add_argument("--host", required=True, help="Host to listen to")
+
+    args = parser.parse_args()
+    d = data(database=args.database)
+    uvicorn.run(app, host=args.host)

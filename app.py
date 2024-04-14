@@ -68,7 +68,7 @@ def calc_average(hourly_rates: List[HourlyPrice]) -> Dict[str, float]:
     for item in hourly_rates:
         d[item.date.hour].append(item.price)
 
-    return {str(hour): mean(d[hour]) for hour in d}
+    return {f"{str(hour).zfill(2)}:00": mean(d[hour]) for hour in d}
 
 
 async def get_average_range(

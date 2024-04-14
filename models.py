@@ -2,10 +2,12 @@
 
 import argparse
 import os, sys
+import functools
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from enum import Enum
 from typing import Iterator
+
 
 
 class DataSource(Enum):
@@ -36,15 +38,21 @@ class data(BaseModel):
         }
     }
 
-    def get(self, source: DataSource, start: datetime) -> HourlyPrice:
+    def __hash__(self):
+        return hash(self.database)
+
+    def get(self, source: DataSource, start: datetime) -> HourlyPrice | None:
         """Get the data for a range of dates"""
         return self._get(source, start.replace(minute=0, second=0, microsecond=0))
 
-    def _get(self, source: DataSource, date: datetime) -> HourlyPrice:
+    @functools.cache
+    def _get(self, source: DataSource, date: datetime) -> HourlyPrice | None:
         fname = self.fname(source, date)
 
         if not os.path.exists(fname):
-            raise RuntimeError(f"File {fname} not found")
+            print(f"File {fname} not found", file=sys.stderr)
+            return None
+
         with open(fname) as fin:
             # The hour we are interested in
             requested = f"{date:%H}:00"
@@ -53,7 +61,8 @@ class data(BaseModel):
                 if hour == requested:
                     return HourlyPrice(date=date, price=float(value))
             else:
-                raise RuntimeError(f"Hour {requested} not found in {fname}")
+                print(f"Hour {requested} not found in {fname}", file=sys.stderr)
+                return None
 
     def range(
         self, source: DataSource, start: datetime, end: datetime
@@ -63,11 +72,8 @@ class data(BaseModel):
         one_hour = timedelta(hours=1)
 
         while current_date <= end:
-            try:
-                data = self.get(source, current_date)
-            except RuntimeError as e:
-                print(e, file=sys.stderr)
-            else:
+            data = self.get(source, current_date)
+            if data is not None:
                 yield data
 
             current_date += one_hour

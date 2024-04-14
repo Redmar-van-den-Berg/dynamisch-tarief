@@ -1,8 +1,13 @@
 from fastapi import FastAPI
-from typing import List, Dict
+from fastapi.responses import HTMLResponse
+from typing import List, Dict, Any
 from collections import defaultdict
 from statistics import mean
 from datetime import datetime, timedelta
+
+import pandas as pd
+import matplotlib.pyplot as plt
+from io import StringIO
 
 
 from models import HourlyPrice, data, DataSource
@@ -11,10 +16,34 @@ app = FastAPI()
 
 d = data(database="~/Downloads/dynamisch/")
 
+def draw(data: Dict[str, Any]) -> str:
+    df = pd.DataFrame(data)
+    print(df)
+    df.plot(kind="line", ylim=(0, df.to_numpy().max()))
 
-@app.get("/")
+    # 'write' the figure as svg
+    fake_file = StringIO()
+    plt.savefig(fake_file, format="svg")
+    fake_file.seek(0)
+
+    return fake_file.read()
+
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {"message": "Hello, world!"}
+    today = datetime.now().replace(hour=23)
+    source = DataSource("netto")
+    day = await get_day_before(source, today)
+    week = await get_week_before(source, today)
+    month = await get_month_before(source, today)
+    year = await get_year_before(source, today)
+
+    data = {
+        "day": day,
+        "week": week,
+        "month": month,
+        "year": year
+    }
+    return draw(data)
 
 
 @app.get("/hourly/{source}/{date}")

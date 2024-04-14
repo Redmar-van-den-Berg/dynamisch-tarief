@@ -4,6 +4,8 @@ from typing import List, Dict, Any
 from collections import defaultdict
 from statistics import mean
 from datetime import datetime, timedelta
+import sys
+import uvicorn
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,8 +15,6 @@ from io import StringIO
 from models import HourlyPrice, data, DataSource
 
 app = FastAPI()
-
-d = data(database="~/Downloads/dynamisch/")
 
 def draw(data: Dict[str, Any]) -> str:
     df = pd.DataFrame(data)
@@ -124,3 +124,8 @@ async def get_year_before(source: DataSource, date: datetime) -> Dict[str, float
     start = date - timedelta(days=364)
     year = await get_average_range(source, start, end)
     return year
+
+if __name__ == "__main__":
+    database = sys.argv[1]
+    d = data(database=database)
+    uvicorn.run(app)

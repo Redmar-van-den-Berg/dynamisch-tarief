@@ -19,7 +19,10 @@ d = data(database="~/Downloads/dynamisch/")
 def draw(data: Dict[str, Any]) -> str:
     df = pd.DataFrame(data)
     print(df)
-    df.plot(kind="line", ylim=(0, df.to_numpy().max()))
+    ax = df.plot(kind="line", ylim=(0, df.to_numpy().max()))
+
+    ax.xaxis.grid(True, which='both')
+    ax.yaxis.grid(True, which='both')
 
     # 'write' the figure as svg
     fake_file = StringIO()

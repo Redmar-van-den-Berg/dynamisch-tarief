@@ -8,6 +8,7 @@ import argparse
 import uvicorn
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from io import StringIO
 
@@ -17,6 +18,10 @@ from models import HourlyPrice, data, DataSource
 app = FastAPI()
 
 def draw(data: Dict[str, Any]) -> str:
+    # Add in duplicate data for 23:00 under 24:00, so the stepped plot ends at 24:00
+    for timespan in data:
+        data[timespan]["24:00"] = data[timespan]["23:00"]
+
     df = pd.DataFrame(data)
     print(df)
 
@@ -28,10 +33,13 @@ def draw(data: Dict[str, Any]) -> str:
         ymin *= 1.1
     # Max is 110% of max value
     ymax = df.to_numpy().max()*1.10
-    ax = df.plot(kind="line", ylim=(ymin, ymax))
+    ax = df.plot(kind="line", drawstyle="steps-post", ylim=(ymin, ymax), figsize=(10, 5), xlim=(0,24))
 
     ax.xaxis.grid(True, which='both')
     ax.yaxis.grid(True, which='both')
+
+    # Show grid line for every hour
+    ax.set_xticks(np.arange(len(df)))
 
     # 'write' the figure as svg
     fake_file = StringIO()
